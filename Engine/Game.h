@@ -1,5 +1,5 @@
-/****************************************************************************************** 
- *	Chili DirectX Framework Version 16.07.20											  *	
+/******************************************************************************************
+ *	Chili DirectX Framework Version 16.07.20											  *
  *	Game.h																				  *
  *	Copyright 2016 PlanetChili.net <http://www.planetchili.net>							  *
  *																						  *
@@ -23,13 +23,20 @@
 #include "Keyboard.h"
 #include "Mouse.h"
 #include "Graphics.h"
+#include "Minefield.h"
 
 class Game
 {
 public:
-	Game( class MainWindow& wnd );
-	Game( const Game& ) = delete;
-	Game& operator=( const Game& ) = delete;
+	enum class Status {
+		Paused,
+		Started,
+		Over
+	};
+public:
+	Game(class MainWindow& wnd);
+	Game(const Game&) = delete;
+	Game& operator=(const Game&) = delete;
 	void Go();
 private:
 	void ComposeFrame();
@@ -43,4 +50,6 @@ private:
 	/********************************/
 	/*  User Variables              */
 	/********************************/
+	Minefield minefield;
+	Status status = Status::Started;
 };

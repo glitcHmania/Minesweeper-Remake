@@ -1,5 +1,5 @@
-/****************************************************************************************** 
- *	Chili DirectX Framework Version 16.07.20											  *	
+/******************************************************************************************
+ *	Chili DirectX Framework Version 16.07.20											  *
  *	Game.cpp																			  *
  *	Copyright 2016 PlanetChili.net <http://www.planetchili.net>							  *
  *																						  *
@@ -20,17 +20,19 @@
  ******************************************************************************************/
 #include "MainWindow.h"
 #include "Game.h"
+#include "SpriteCodex.h"
 
-Game::Game( MainWindow& wnd )
+Game::Game(MainWindow& wnd)
 	:
-	wnd( wnd ),
-	gfx( wnd )
+	wnd(wnd),
+	gfx(wnd),
+	minefield(100, { 0,0 })
 {
 }
 
 void Game::Go()
 {
-	gfx.BeginFrame();	
+	gfx.BeginFrame();
 	UpdateModel();
 	ComposeFrame();
 	gfx.EndFrame();
@@ -38,8 +40,21 @@ void Game::Go()
 
 void Game::UpdateModel()
 {
+	while (!wnd.mouse.IsEmpty())
+	{
+		const Mouse::Event e = wnd.mouse.Read();
+		if (e.GetType() == Mouse::Event::Type::LPress)
+		{
+			minefield.RevealOnClick(e.GetPos());
+		}
+		else if (e.GetType() == Mouse::Event::Type::RPress)
+		{
+			minefield.ToggleFlagOnClick(e.GetPos());
+		}
+	}
 }
 
 void Game::ComposeFrame()
 {
+	minefield.Draw(gfx);
 }
