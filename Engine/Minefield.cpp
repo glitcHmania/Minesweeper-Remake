@@ -2,10 +2,9 @@
 #include <assert.h>
 #include <algorithm>
 
-Minefield::Minefield(int in_nMines, Vei2 in_pos)
+Minefield::Minefield(int in_nMines)
 {
 	nMines = in_nMines;
-	pos = in_pos;
 	std::random_device rd;
 	std::mt19937 rng(rd());
 	std::uniform_int_distribution<int> xDist(0, width - 1);
@@ -29,12 +28,13 @@ Minefield::Cell& Minefield::CellAt(const Vei2 gridPos)
 
 void Minefield::Draw(Graphics& gfx)
 {
-	gfx.DrawRect(pos.x, pos.y, pos.x + width * SpriteCodex::tileSize, pos.y + height * SpriteCodex::tileSize, SpriteCodex::baseColor);
+	const Vei2 screenStartPos = { gfx.ScreenWidth/2 - (width * SpriteCodex::tileSize / 2) , gfx.ScreenHeight/2 - (height * SpriteCodex::tileSize / 2) };
+	gfx.DrawRect(screenStartPos.x, screenStartPos.y, screenStartPos.x + width * SpriteCodex::tileSize, screenStartPos.y + height * SpriteCodex::tileSize, SpriteCodex::baseColor);
 	for (Vei2 gridPos = { 0,0 }; gridPos.y < height; gridPos.y++)
 	{
 		for (gridPos.x = 0; gridPos.x < width; gridPos.x++)
 		{
-			const Vei2 screenPos = gridPos * SpriteCodex::tileSize;
+			const Vei2 screenPos = screenStartPos + gridPos * SpriteCodex::tileSize;
 
 			if (!isDead)
 			{
@@ -50,7 +50,7 @@ void Minefield::Draw(Graphics& gfx)
 					}
 					else
 					{
-						SpriteCodex::DrawTile0(screenPos, gfx);
+						DrawCellByNumber(CellAt(gridPos).GetNearbyMines(), gfx, screenPos);
 					}
 					break;
 				case Cell::Status::Flagged:
@@ -61,7 +61,6 @@ void Minefield::Draw(Graphics& gfx)
 			}
 			else
 			{
-
 				switch (CellAt(gridPos).GetStatus())
 				{
 				case Cell::Status::Hidden:
@@ -105,14 +104,15 @@ void Minefield::Draw(Graphics& gfx)
 	}
 }
 
-Vei2 Minefield::ScreenToGrid(const Vei2& screenPos)
+Vei2 Minefield::ScreenToGrid(const Vei2& screenPos, Graphics& gfx)
 {
-	return screenPos / SpriteCodex::tileSize;
+	const Vei2 screenStartPos = { gfx.ScreenWidth / 2 - (width * SpriteCodex::tileSize / 2) , gfx.ScreenHeight / 2 - (height * SpriteCodex::tileSize / 2) };
+	return (screenPos - screenStartPos) / SpriteCodex::tileSize;
 }
 
-void Minefield::RevealOnClick(const Vei2& screenPos)
+void Minefield::RevealOnClick(const Vei2& screenPos, Graphics& gfx)
 {
-	Vei2 gridPos = ScreenToGrid(screenPos);
+	Vei2 gridPos = ScreenToGrid(screenPos, gfx);
 	if (gridPos.x < width && gridPos.x >= 0 && gridPos.y < height && gridPos.y >= 0)
 	{
 		Cell& cell = CellAt(gridPos);
@@ -121,14 +121,132 @@ void Minefield::RevealOnClick(const Vei2& screenPos)
 	}
 }
 
-void Minefield::ToggleFlagOnClick(const Vei2& screenPos)
+void Minefield::ToggleFlagOnClick(const Vei2& screenPos, Graphics& gfx)
 {
-	Vei2 gridPos = ScreenToGrid(screenPos);
+	Vei2 gridPos = ScreenToGrid(screenPos, gfx);
 	if (gridPos.x < width && gridPos.x >= 0 && gridPos.y < height && gridPos.y >= 0)
 	{
 		Cell& cell = CellAt(gridPos);
 		assert(gridPos.x >= 0 && gridPos.x < width&& gridPos.y >= 0 && gridPos.y < height);
 		cell.ToggleFlag();
+	}
+}
+
+void Minefield::CountNearbyMines()
+{
+	for (Vei2 gridPos = { 0,0 }; gridPos.y < height; gridPos.y++)
+	{
+		for (gridPos.x = 0; gridPos.x < width; gridPos.x++)
+		{
+			int nearbyMines = 0;
+
+			const int startX = gridPos.x - 1;
+			const int endX = gridPos.x + 1;
+			const int startY = gridPos.y - 1;
+			const int endY = gridPos.y + 1;
+
+			for (int x = std::max(startX, 0); x <= std::min(endX, width-1); x++)
+			{
+				for (int y = std::max(startY, 0); y <= std::min(endY, height-1); y++)
+				{
+					if (CellAt({ x,y }).HasMine())
+					{
+						nearbyMines++;
+					}
+				}
+			}
+			CellAt(gridPos).SetNearbyMines(nearbyMines);
+		}
+	}
+}
+
+void Minefield::DrawCellByNumber(int number, Graphics& gfx, const Vei2& screenPos)
+{
+	switch (number)
+	{
+	case 0:
+		SpriteCodex::DrawTile0(screenPos, gfx);
+		break;
+	case 1:
+		SpriteCodex::DrawTile1(screenPos, gfx);
+		break;
+	case 2:
+		SpriteCodex::DrawTile2(screenPos, gfx);
+		break;
+	case 3:
+		SpriteCodex::DrawTile3(screenPos, gfx);
+		break;
+	case 4:
+		SpriteCodex::DrawTile4(screenPos, gfx);
+		break;
+	case 5:
+		SpriteCodex::DrawTile5(screenPos, gfx);
+		break;
+	case 6:
+		SpriteCodex::DrawTile6(screenPos, gfx);
+		break;
+	case 7:
+		SpriteCodex::DrawTile7(screenPos, gfx);
+		break;
+	case 8:
+		SpriteCodex::DrawTile8(screenPos, gfx);
+		break;
+	}
+}
+
+void Minefield::RevealSafeCells()
+{
+	for (Vei2 gridPos = { 0,0 }; gridPos.y < height; gridPos.y++)
+	{
+		for (gridPos.x = 0; gridPos.x < width; gridPos.x++)
+		{
+			bool safeToReveal = false;
+			const int startX = gridPos.x - 1;
+			const int endX = gridPos.x + 1;
+			const int startY = gridPos.y - 1;
+			const int endY = gridPos.y + 1;
+
+			for (int x = std::max(startX, 0); x <= std::min(endX, width - 1); x++)
+			{
+				for (int y = std::max(startY, 0); y <= std::min(endY, height - 1); y++)
+				{
+					if ((CellAt({ x, y }).HasMine() && !CellAt(gridPos).HasMine()) || !CellAt({ x, y }).HasMine() && !CellAt(gridPos).HasMine())
+					{
+						CellAt(gridPos).Reveal();
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+Minefield::GameStatus Minefield::CheckWinStatus()
+{
+	int clearCells = width * height - nMines;
+	int checkedCells = 0;
+	for (Vei2 gridPos = { 0,0 }; gridPos.y < height; gridPos.y++)
+	{
+		for (gridPos.x = 0; gridPos.x < width; gridPos.x++)
+		{
+			Cell cell = CellAt(gridPos);
+			if (!cell.HasMine() && cell.IsRevealed())
+			{
+				checkedCells++;
+			}
+		}
+	}
+	if (checkedCells == clearCells)
+	{
+		return GameStatus::Win;
+	}
+	else if (isDead)
+	{
+		return GameStatus::Lost;
+	}
+	else
+	{
+		return GameStatus::Started;
 	}
 }
 
@@ -181,4 +299,14 @@ bool Minefield::Cell::HasMine()
 Minefield::Cell::Status& Minefield::Cell::GetStatus()
 {
 	return status;
+}
+
+void Minefield::Cell::SetNearbyMines(int in_nearbyMines)
+{
+	nearbyMines = in_nearbyMines;
+}
+
+int Minefield::Cell::GetNearbyMines()
+{
+	return nearbyMines;
 }

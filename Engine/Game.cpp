@@ -26,7 +26,7 @@ Game::Game(MainWindow& wnd)
 	:
 	wnd(wnd),
 	gfx(wnd),
-	minefield(100, { 0,0 })
+	minefield(1)
 {
 }
 
@@ -40,16 +40,21 @@ void Game::Go()
 
 void Game::UpdateModel()
 {
-	while (!wnd.mouse.IsEmpty())
+	minefield.CountNearbyMines();
+	if (minefield.CheckWinStatus() == Minefield::GameStatus::Started)
 	{
-		const Mouse::Event e = wnd.mouse.Read();
-		if (e.GetType() == Mouse::Event::Type::LPress)
+		while (!wnd.mouse.IsEmpty())
 		{
-			minefield.RevealOnClick(e.GetPos());
-		}
-		else if (e.GetType() == Mouse::Event::Type::RPress)
-		{
-			minefield.ToggleFlagOnClick(e.GetPos());
+			const Mouse::Event e = wnd.mouse.Read();
+			if (e.GetType() == Mouse::Event::Type::LPress)
+			{
+				minefield.RevealOnClick(e.GetPos(), gfx);
+				//minefield.RevealSafeCells();
+			}
+			else if (e.GetType() == Mouse::Event::Type::RPress)
+			{
+				minefield.ToggleFlagOnClick(e.GetPos(), gfx);
+			}
 		}
 	}
 }
@@ -57,4 +62,12 @@ void Game::UpdateModel()
 void Game::ComposeFrame()
 {
 	minefield.Draw(gfx);
+	if (minefield.CheckWinStatus() == Minefield::GameStatus::Win)
+	{
+		SpriteCodex::DrawWinTitle({ gfx.ScreenWidth/2 - 25, gfx.ScreenHeight/2 - 19 }, gfx);
+	}
+	else if (minefield.CheckWinStatus() == Minefield::GameStatus::Lost)
+	{
+		SpriteCodex::DrawLooseTitle({ gfx.ScreenWidth / 2 - 30, gfx.ScreenHeight / 2 - 19 }, gfx);
+	}
 }
