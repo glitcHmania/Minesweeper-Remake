@@ -223,20 +223,15 @@ void Minefield::RevealSafeCells()
 
 Minefield::GameStatus Minefield::CheckWinStatus()
 {
-	int clearCells = width * height - nMines;
 	int checkedCells = 0;
-	for (Vei2 gridPos = { 0,0 }; gridPos.y < height; gridPos.y++)
+	for(Cell c : field)
 	{
-		for (gridPos.x = 0; gridPos.x < width; gridPos.x++)
+		if ( (!c.HasMine() && c.IsRevealed()) || ( c.HasMine() && c.IsFlagged() ) )
 		{
-			Cell cell = CellAt(gridPos);
-			if (!cell.HasMine() && cell.IsRevealed())
-			{
-				checkedCells++;
-			}
+			checkedCells++;
 		}
 	}
-	if (checkedCells == clearCells)
+	if (checkedCells == width * height)
 	{
 		return GameStatus::Win;
 	}
