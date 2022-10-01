@@ -26,7 +26,7 @@ Game::Game(MainWindow& wnd)
 	:
 	wnd(wnd),
 	gfx(wnd),
-	minefield(1)
+	minefield(10)
 {
 }
 
@@ -49,7 +49,6 @@ void Game::UpdateModel()
 			if (e.GetType() == Mouse::Event::Type::LPress)
 			{
 				minefield.RevealOnClick(e.GetPos(), gfx);
-				//minefield.RevealSafeCells();
 			}
 			else if (e.GetType() == Mouse::Event::Type::RPress)
 			{
